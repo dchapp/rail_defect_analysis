@@ -380,6 +380,57 @@ def load_data(csv_file):
         data = infile.readlines()
     return data
 
+
+
+def to_list_of_str(data):
+    ### Split string into list of string
+    data = data.map(lambda x: x.split(","))
+    ### Exclude excel row number column
+    data = data.map(lambda x: x[1:])
+    ### Strip whitespace
+    data = data.map(lambda x: [y.strip() for y in x])
+    return data
+
+def separate_header(data):
+    tmp = data.collect()
+    header = tmp[0]
+    data = sc.parallelize(tmp[1:])
+    return header, data
+
+
+def get_divisions(data, header):
+    ### Get the column index for the division
+    div_idx = header.index(u'DIVISION')
+    ### Map to KVP
+    kvps = data.map(lambda x: (x[div_idx], x[:div_idx] + x[div_idx+1:]))
+    ### Group by key
+    divs = kvps.groupByKey()
+    records_per_div = divs.map(lambda x: (x[0], len(x[1])))
+
+    pprint.pprint(records_per_div.collect())
+    return divs 
+
+def get_subdivisions(data, header):
+    ### Get the column index for the division
+    div_idx = header.index(u'DIVISION')
+    subdiv_idx = header.index(u'SUBDIVISION')
+    ### Map to KVP
+    kvps = data.map(lambda x: ((x[div_idx],x[subdiv_idx]), x[:subdiv_idx] + x[subdiv_idx+1:]))
+    ### Group by key
+    subdivs = kvps.groupByKey()
+    records_per_subdiv = subdivs.map(lambda x: (x[0], len(x[1])))
+
+    pprint.pprint(records_per_subdiv.collect())
+    return subdivs 
+
+def restrict_to_division(data, div):
+    ### Group by key with division as key
+    return 0
+
+def restrict_to_subdivision(data, subdiv):
+    return 0
+
+
 def main():
     ### Parse command line arguments
     ap = argparse.ArgumentParser(description="Rail and Track Geometry Defect Analysis")
@@ -405,13 +456,27 @@ def main():
         else:
             data = load_data(csv_file)
 
-    ### Load the latitude-longitude track geometry
-    ### defect data. Produce a plot of the locations
-    ### colored by defect type.
-    if args.spark:
-        generate_longlat_plot_spark(data)
-    else:
-        generate_longlat_plot_serial(data)
+    ### Basic preprocessing step
+    data = to_list_of_str(data)
+
+    ### Separate headers and data
+    header, data = separate_header(data)
+
+    print "Header: " 
+    pprint.pprint(header)
+
+
+    ### Subset by division, subdivision, etc. 
+    divisions = get_divisions(data, header)
+    subdivisions = get_subdivisions(data, header)
+
+    ##### Load the latitude-longitude track geometry
+    ##### defect data. Produce a plot of the locations
+    ##### colored by defect type.
+    ##if args.spark:
+    ##    generate_longlat_plot_spark(data)
+    ##else:
+    ##    generate_longlat_plot_serial(data)
 
 
     #data = data.map(lambda x: x.split(",")[1:])
