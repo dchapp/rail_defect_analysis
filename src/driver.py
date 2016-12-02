@@ -18,161 +18,76 @@ from pyspark.mllib.tree import DecisionTree
 from pyspark.mllib.evaluation import MulticlassMetrics
 
 
-#### Necessary for dataframe stuff
-#from pyspark import SQLContext
-#sql_context = SQLContext(sc)
-#
-#
-#### Functions for computing descriptive statistics
-#from SummaryStatistics import summary_preprocess, summary_run, summary_display
-#
-#### Functions for decision tree classifier
-#from DecisionTree import dt_preprocess, dt_run, dt_display
-#
-#### Functions for clustering using K-Means
-#from KMeans import kmeans_preprocess, kmeans_run, kmeans_evaluate, kmeans_display
-#
-#### A function to convert xlsx files to csv since PySpark's textFile function
-#### works with csv. Get rid of this after upgrading to the MLLib data frame API
-#from xlsx2csv import convert
-
+####################################################################################
+##################################### IO  ##########################################
+####################################################################################
 
 """
-Classification Task:
-============================================================================
-|           Data Set          | defect class | MGT | cumul. MGT | milepost |
-============================================================================
-| rail_defects.xlsx           |       H      |  S  |     U      |    D     |
-| track_geometry_defects.xslx |       E      |     |            |          |
-============================================================================
-
-MLlib Classifiers to apply:
-- decision tree (defect class)  
-- regression tree (MGT, cumulative MGT, and milepost)
-- Logistic Regression
-- SVM
+Data loading wrapper
 """
-
-def ingest(data_file, class_label_col):
-    l = int(class_label_col)
-    csv = convert(data_file)
-    rdd = sc.textFile(csv).map(lambda row: row.split(","))
-    rdd = rdd.map(lambda row: ( row[1:l], row[:l]+row[l+1:]))
-    df  = rdd.toDF(["label", "features"])
-    return df
-
-
-
-#def ingest(data_file):
-#    csv = convert(data_file)
-#    return default_ingest(csv)
-
-"""
-All this does right now is accept a csv file as input read in each row, split 
-it on tabs, and emit an RDD of numpy arrays.
-"""
-def default_ingest(csv_file):
-    data = sc.parallelize(csv_file)
-    #data = sc.textFile(csv_file)
-    return data
-
-
-def discard_incomplete_rows(data):
-    ### Helper function to detect rows with missing data
-    def check_row(row):
-        if '' in row:
-            return False
+def load_data(data_file, args):
+    data_file_name = "".join(data_file.split(".")[:-1])
+    data_file_type = data_file.split(".")[-1]
+    csv_file = data_file_name + ".csv"
+    if os.path.isfile(csv_file):
+        if args.spark:
+            data = sc.textFile(csv_file);
         else:
-            return True
-    data = data.filter(lambda row: check_row(row))
-    return data
+            with open(csv, "rb") as infile:
+                data = infile.readlines()
+    else:
+        csv = xlsx_to_csv(data_file)
+        if args.spark:
+            data = sc.textFile(csv)
+        else:
+            with open(csv, "rb") as infile:
+                data = infile.readlines()
+    return data 
 
 """
-Should be run AFTER discarding incomplete rows
+Converts xlsx file to csv using Pandas
 """
-def discard_non_numerical_columns(data):
-    ### Helper function to return truncated rows
-    def truncate_row(row):
-        truncated = []
-        for x in row:
-            try: 
-                truncated.append(float(x))
-            # Actually catching the exception here is apparently v. expensive.
-            except:
-                pass
-        return np.array(truncated)
-    data = data.map(lambda row: truncate_row(row))
-    return data
-
-
-def get_summary_statistics(infile):
-    data = ingest(infile)
-    summary = summary_run(data)
-
-
-
-
-
-
-
-
 def xlsx_to_csv(xlsx_file):
-    print xlsx_file
     data_xlsx = pd.read_excel(xlsx_file, "Sheet1", index_col=None)
     csv_file = xlsx_file.split(".")[0] + ".csv"
     print "Converting " + xlsx_file + " to " + csv_file
     data_xlsx.to_csv(csv_file, encoding="utf-8")
     return csv_file
 
-def get_unique_values_by_column(data):
-    headers = data.collect()[0]
-    ### Get unique values in each column and associate
-    ### this list of values with a column label
-    kvps = []
-    for h in headers:
-        idx = headers.index(h)
-        col_data = data.map(lambda x: x[idx]).filter(lambda x: x != h)
-        distinct_values = col_data.distinct()
-        kvp = (idx, distinct_values.collect())
-        kvps.append(kvp)
-    return sc.parallelize(kvps)
+    
 
 
-
-def my_isnumeric(string):
-    try:
-        return float(string)
-    except ValueError:
-        pass
+####################################################################################
+################################ Preprocessing  ####################################
+####################################################################################
+"""
+Assumes data is RDD of lists of 
+cleaned strings.
+"""
+def separate_header(data):
+    tmp = data.collect()
+    header = tmp[0]
+    data = sc.parallelize(tmp[1:])
+    return header, data
 
 """
-This function takes an RDD of mixed data and 
-makes the col_idx column purely numerical, 
-storing the number of distinct values.
+Assumes data comes directly from xlsx_to_csv,
+specifically that each string in data has a
+superfluous Excel row number as its first element.
+The map splits of the delimeter, discards the 
+first element, then strips the whitespace from 
+each remaining element. 
 """
-def categorical_to_numerical(data, col_idx):
-    ### Get the column
-    col = data.map(lambda x: x[col_idx])
-    ### If it's already numerical, exit early
-    if my_isnumeric(col.collect()[0]):
-        ### Make it a float
-        data = data.map(lambda x: x[:col_idx] + [float(x[col_idx])] + x[(col_idx+1):])
-        return data, 0
-    else:
-        ### Get the set of unique values
-        unique = list(set(col.collect()))
-        num_categories = len(unique)
-        #print "Num unique values for column " + str(col_idx) + ": " + str(len(unique))
-        ### Make a map of unique labels to numerical proxies
-        category_map = { k:v for k,v in zip(unique, range(len(unique))) }
-        ### Knit the column back in
-        data = data.map(lambda x: x[:col_idx] + [category_map[x[col_idx]]] + x[(col_idx+1):])
-        return data, num_categories
+def to_list_of_str(data, delim=","):
+    data = data.map(lambda x: x.split(delim))
+    data = data.map(lambda x: x[1:])
+    data = data.map(lambda x: [y.strip() for y in x])
+    return data
 
-
-def exclude_date_and_defect_size(data):
-    return data.map(lambda x: x[:8] + x[10:])
-
+"""
+Assumes data is RDD of lists of 
+cleaned strings
+"""
 def exclude_incomplete_rows(data):
     def f(x):
         if '' in x:
@@ -180,115 +95,209 @@ def exclude_incomplete_rows(data):
         else:
             return x
     data = data.map(lambda x: f(x))
+    num_rows = len(data.collect())
     data = data.filter(lambda x: x != None)
+    num_complete = len(data.collect())
+    print "Number of rows: " + str(num_rows)
+    print "Number of rows with no missing values: " + str(num_complete)
+    print "Percentage remaining: " + str(float(num_complete)/num_rows)
     return data
 
-def get_class_indices(data):
-    classes = data.map(lambda x: x[7]) 
-    unique_labels = list(set(classes.collect()))
-    #pprint.pprint(unique_labels)
-    class_indices = { k:v for k,v in zip(unique_labels, range(len(unique_labels))) }
-    #pprint.pprint(class_indices)
-    return class_indices
+####################################################################################
+################################ Maps to subsets  ##################################
+####################################################################################
+"""
+"""
+def to_div(data, header, div):
+    idx = header.index(u'DIVISION')
+    return data.filter(lambda x: x[idx] == div)
 
-def to_labeled_point(record):
+def to_subdiv(data, header, div, subdiv):
+    d_idx = header.index(u'DIVISION')
+    s_idx = header.index(u'SUBDIVISION')
+    return data.filter(lambda x: x[d_idx] == div and x[s_idx] == subdiv)
+
+####################################################################################
+################################ Maps to KVPS  #####################################
+####################################################################################
+"""
+"""
+def to_kvps_col_num_missing(data, header):
+    kvps = []
+    for i in xrange(len(header)):
+        k = header[i]
+        v = data.map(lambda x: x[i])
+        num_elements = v.count()
+        v = v.filter(lambda x: x != "")
+        num_present = v.count()
+        p = round(1 - float(num_present)/num_elements,2)
+        #kvps.append((k, (num_present, num_elements-num_present)))
+        kvps.append((k, p))
+    return sc.parallelize(kvps)
+
+"""
+"""
+def to_kvps_col_num_unique(data, header):
+    kvps = []
+    for i in xrange(len(header)):
+        k = header[i]
+        v = data.map(lambda x: x[i])
+        uniques = v.distinct()
+        num_unique = uniques.count()
+        kvps.append((k, num_unique))
+    return sc.parallelize(kvps)
+
+"""
+"""
+def to_kvps_div_count(data, header):
+    ### Get the column index for the division
+    div_idx = header.index(u'DIVISION')
+    ### Map to KVP
+    kvps = data.map(lambda x: (x[div_idx], x))
+    ### Group by key
+    #divs = kvps.groupByKey()
+    #records_per_div = divs.map(lambda x: (x[0], len(x[1])))
+    #pprint.pprint(records_per_div.collect())
+    records_per_div = kvps.countByKey()
+    return records_per_div
+
+"""
+"""
+def to_kvps_subdiv_count(data, header):
+    ### Get the column index for the division
+    div_idx = header.index(u'DIVISION')
+    subdiv_idx = header.index(u'SUBDIVISION')
+    ### Map to KVP
+    kvps = data.map(lambda x: ((x[div_idx],x[subdiv_idx]), x))
+    ### Group by key
+    #subdivs = kvps.groupByKey()
+    #records_per_subdiv = subdivs.map(lambda x: (x[0], len(x[1])))
+    records_per_subdiv = kvps.countByKey()
+    #pprint.pprint(records_per_subdiv.collect())
+    return records_per_subdiv
+
+"""
+"""
+def count_missing_values(row):
+    cleaned = filter(lambda x: x != "", row)
+    return len(row) - len(cleaned)
+
+"""
+"""
+def to_kvps_row_num_missing(data):
+    return data.map(lambda x: (x, count_missing_values(x)))
+
+"""
+"""
+def to_class_labels(data, header, data_source):
+    if data_source == "data/rail_defects.xlsx":
+        idx = header[u"DEFECT TYPE"]
+    elif data_source == "data/track_geometry_defects.xlsx":
+        idx = header[u"EXCEPTION TYPE"]
+    return data.map(lambda x: x[idx])
+
+
+def to_col(data, i):
+    return data.map(lambda x: x[i])
+
+"""
+"""
+def build_col_value_to_idx_map(col_values):
+    values = col_values.distinct().collect()
+    return {k:v for k,v in zip(values,range(len(values)))}
+
+####################################################################################
+################################ Classifiers  ######################################
+####################################################################################
+"""
+Convert to labeled point for classifiers
+"""
+def to_labeled_point(data_point, header, data_file):
+    if data_file == "track_geometry":
+        class_idx = header["EXCEPTION TYPE"]
+    elif data_file == "rail":
+        class_idx = header["DEFECT TYPE"]
     label = record[7] ### for rail defects dataset
     feature_vector = record[:7] + record[8:]
     return LabeledPoint(label, feature_vector) 
 
-def decision_tree_preprocess(data, class_indices):
+def restrict(x, header, class_label, feature_cols):
+    cols = [class_label] + feature_cols
+    ret = []
+    for c in cols:
+        ret.append(x[header[c]])
+    return ret
 
-    num_classes = len(class_indices)
-    cat_features_info = {}
-    data = exclude_date_and_defect_size(data)
-    num_cols = len(data.collect()[0])
-
-    ### Separate features and class labels
-    feature_vectors = data.map(lambda x: x[:7] + x[8:])
-    class_indices = get_class_indices(data)
-    class_labels = data.map(lambda x: class_indices[x[7]])
-    num_features = len(feature_vectors.collect()[0])
-
-    for i in xrange(num_features):
-        feature_vectors, num_categories = categorical_to_numerical(feature_vectors, i)
-        if num_categories > 0 and num_categories < 32: ### Max bin thing
-            cat_features_info[i] = num_categories
+def to_labeled_points(data, data_source, header, feature_cols=None):
+    header = {k:v for k,v in zip(header,range(len(header)))}
     
-    print "Mapping records to labeled points"
-    #data = data.map(lambda x: to_labeled_point(x))
-    data = class_labels.zip(feature_vectors)
-    data = data.map(lambda x: LabeledPoint(x[0], x[1]))
+    ### Restrict
+    class_label = None
+    if data_source == "data/rail_defects.xlsx":
+        class_label = "DEFECT TYPE"
+    elif data_source == "data/track_geometry_defects.xlsx":
+        class_label = "EXCEPTION TYPE"
+    data = data.map(lambda x: restrict(x, header, class_label, feature_cols))
+    data = exclude_incomplete_rows(data)
+    #print "Restricted data: "
+    #pprint.pprint(data.collect()[:5])
 
-    print "Splitting into training and testing data sets"
-    (training, testing) = data.randomSplit([0.8, 0.2])
+    ### Rebuild header
+    new_header = {k:v for k,v in zip([class_label]+feature_cols,range(len(feature_cols)+1))}
+    #print "New header: "
+    #print new_header
 
-    print "Categorical info dict"
-    pprint.pprint( cat_features_info )
-
-    print "Train the decision tree model"
-    #model = DecisionTree.trainClassifier(training, numClasses=num_classes, categoricalFeaturesInfo={}, impurity="gini", maxDepth=5, maxBins=32)
-    model = DecisionTree.trainClassifier(training, numClasses=num_classes, categoricalFeaturesInfo=cat_features_info, impurity="gini", maxDepth=20, maxBins=100)
-    print "Training complete"
-
-    print "Test the decision tree model against the set-aside testing data"
-    predictions = model.predict(testing.map(lambda x: x.features))
-    labels_and_predictions = testing.map(lambda x: x.label).zip(predictions)
-    test_error = labels_and_predictions.filter(lambda (v,p): v!=p).count() / float(testing.count())
-    print "Test error: " + str(test_error)
-    #print "Learned model: " 
-    #print model.toDebugString()
-
-    # Instantiate metrics object
-    metrics = MulticlassMetrics(labels_and_predictions)
-    cm = metrics.confusionMatrix()
-    #print cm
-
-    #### This should contain kvps of the form:
-    #### (n, k) meaning feature with column index n 
-    #### has k possible values (categories)
-    #unique_values = get_unique_values_by_column(data)
-    #num_unique = unique_values.map(lambda x: (x[0], len(x[1])))
-    #cat_features_info = { (x[0], x[1]) for x in num_unique.collect() }
-
-    #pprint.pprint(cat_features_info)
+    ### Get feature vectors
+    feature_vectors = data.map(lambda x: x[1:])
+    #print "Feature vectors: "
+    #pprint.pprint( feature_vectors.collect()[:5] )
     
-    ### dummy return
-    return (0,0,0)
-     
-
-def to_date(date_string):
-    x = date_string.split("/")
-    return datetime.date(int(x[2]), int(x[0]), int(x[1]))
-
-
-
-def convert_categorical_to_numerical(data):
-    ### Define an RDD of kvps of the form:
-    ### ( col_label, [ val_0, val_1, ..., val_n-1 ] )
-    col_vals = get_unique_values_by_column(data)
-    ### Do binning if number of unique vals exceeds threshold
-    threshold = 10 # just fix a value for now
-    #binned = col_vals.map(lambda x: conditional_bin(x, threshold))
+    ### Get class labels
+    class_labels = data.map(lambda x: x[0])
+    #print "Class labels: " 
+    #pprint.pprint( class_labels.collect()[:5] ) 
     
+    ### Get class labels
+    #class_labels = to_class_labels(data, header, data_source)
+    #print "Original class labels: "
+    #print "Num class labels: " + str(class_labels.count())
+    #pprint.pprint( class_labels.collect()[:5] )
+    class_label_to_idx_map = build_col_value_to_idx_map(class_labels)
+    feature_value_to_idx_maps = {}
+    for fc in feature_cols:
+        ### Get the unique values in this feature's column
+        col_values = to_col(data, new_header[fc])
+        ### Build the map to translate the feature value labels into numeric labels
+        feature_value_to_idx_maps[fc] = build_col_value_to_idx_map(col_values)
+    feature_arities = []
+    for fc in feature_cols:
+        feature_arities.append(len(feature_value_to_idx_maps[fc]))
+    catinfo = {k:v for k,v in zip(range(len(feature_cols)),feature_arities)}
 
-def build_decision_tree_model(data, class_indices):
-    ### Preprocess 
-    (data, cat_features_info, num_classes) = decision_tree_preprocess(data, class_indices)
-    ### Result should be an RDD of LabeledPoint
+    #### Get feature vectors
+    #feature_vectors = data.map(lambda x: x[1:])
+    #print "Feature vectors: "
+    #pprint.pprint( feature_vectors.collect()[:5] )
 
-    exit()
+    ### Map them to purely numerical representation
+    class_labels = class_labels.map(lambda x: class_label_to_idx_map[x])
+    #print "Class labels (converted): "
+    #pprint.pprint( class_labels.collect()[:5] ) 
+    def to_nums(x, feature_value_to_idx_maps, feature_cols):
+        y = []
+        for i in xrange(len(feature_cols)):
+            y.append( feature_value_to_idx_maps[feature_cols[i]][x[i]] )
+        return y
+    feature_vectors = feature_vectors.map(lambda x: to_nums(x, feature_value_to_idx_maps, feature_cols))
+    #print "Feature vectors (converted): "
+    #pprint.pprint( feature_vectors.collect()[:5] )
+    labels_and_feature_vectors = class_labels.zip(feature_vectors)
+    #print "Joined class labels and feature vectors: "
+    #pprint.pprint(labels_and_feature_vectors.collect()[:5])
+    labeled_points = labels_and_feature_vectors.map(lambda x: LabeledPoint(x[0], x[1]))
+    return labeled_points, catinfo
 
-    ### Split data into training and testing sets
-    (training_data, test_data) = data.randomSplit([0.7, 0.3])
 
-    ### Train the model
-    ### Needs a categoricalFeaturesInfo map indicating which features
-    ### are categorical.
-    model = DecisionTree.trainClassifier(training_data, numClasses = num_classes, categoricalFeaturesInfo = cat_features_info, impurity = "gini", maxDepth = 5, maxBins = 32)
-
-
-def exclude_joint_weld(data):
-    return data.map(lambda x: x[:14] + x[15:])
 
 """
 Takes
@@ -371,64 +380,45 @@ def try_float(x):
     except ValueError:
         return x
 
-"""
-Takes a CSV
-Returns its rows as list of strings
-"""
-def load_data(csv_file):
-    with open(csv_file, "rb") as infile:
-        data = infile.readlines()
-    return data
+#"""
+#Takes a CSV
+#Returns its rows as list of strings
+#"""
+#def load_data(csv_file):
+#    with open(csv_file, "rb") as infile:
+#        data = infile.readlines()
+#    return data
 
 
 
-def to_list_of_str(data):
-    ### Split string into list of string
-    data = data.map(lambda x: x.split(","))
-    ### Exclude excel row number column
-    data = data.map(lambda x: x[1:])
-    ### Strip whitespace
-    data = data.map(lambda x: [y.strip() for y in x])
-    return data
+#def to_list_of_str(data):
+#    ### Split string into list of string
+#    data = data.map(lambda x: x.split(","))
+#    ### Exclude excel row number column
+#    data = data.map(lambda x: x[1:])
+#    ### Strip whitespace
+#    data = data.map(lambda x: [y.strip() for y in x])
+#    return data
 
-def separate_header(data):
-    tmp = data.collect()
-    header = tmp[0]
-    data = sc.parallelize(tmp[1:])
-    return header, data
+#def separate_header(data):
+#    tmp = data.collect()
+#    header = tmp[0]
+#    data = sc.parallelize(tmp[1:])
+#    return header, data
 
 
-def get_divisions(data, header):
-    ### Get the column index for the division
-    div_idx = header.index(u'DIVISION')
-    ### Map to KVP
-    kvps = data.map(lambda x: (x[div_idx], x[:div_idx] + x[div_idx+1:]))
-    ### Group by key
-    divs = kvps.groupByKey()
-    records_per_div = divs.map(lambda x: (x[0], len(x[1])))
 
-    pprint.pprint(records_per_div.collect())
-    return divs 
+def plot_defect_histogram(data, data_source, header):
+    if data_source == "data/rail_defects.xlsx":
+        label = "DEFECT TYPE"
+    elif data_source == "data/track_geometry_defects.xlsx":
+        label = "EXCEPTION TYPE"
+    defect_col = to_col(data, header.index(label))
+    defect_col = defect_col.map(lambda x: (x, 1))
+    counts = defect_col.reduceByKey(lambda a,b: a+b)
+    pprint.pprint(counts.collect())
 
-def get_subdivisions(data, header):
-    ### Get the column index for the division
-    div_idx = header.index(u'DIVISION')
-    subdiv_idx = header.index(u'SUBDIVISION')
-    ### Map to KVP
-    kvps = data.map(lambda x: ((x[div_idx],x[subdiv_idx]), x[:subdiv_idx] + x[subdiv_idx+1:]))
-    ### Group by key
-    subdivs = kvps.groupByKey()
-    records_per_subdiv = subdivs.map(lambda x: (x[0], len(x[1])))
-
-    pprint.pprint(records_per_subdiv.collect())
-    return subdivs 
-
-def restrict_to_division(data, div):
-    ### Group by key with division as key
-    return 0
-
-def restrict_to_subdivision(data, subdiv):
-    return 0
+#def get_divisions(data, header):
 
 
 def main():
@@ -440,35 +430,94 @@ def main():
    
     ### Load the data
     data_file = args.file
-    data_file_name = "".join(data_file.split(".")[:-1])
-    data_file_type = data_file.split(".")[-1]
-    ### Check if csv file for target data set already exists
-    csv_file = data_file_name + ".csv"
-    if os.path.isfile(csv_file):
-        if args.spark:
-            data = sc.textFile(csv_file);
-        else:
-            data = load_data(csv_file)
-    else:
-        csv = xlsx_to_csv(data_file)
-        if args.spark:
-            data = sc.textFile(csv)
-        else:
-            data = load_data(csv_file)
+    print "Loading data from file: " + data_file
+    data = load_data(data_file, args)
 
     ### Basic preprocessing step
+    #delim = ","
+    #data = to_list_of_str(data, delim)
     data = to_list_of_str(data)
 
     ### Separate headers and data
-    header, data = separate_header(data)
-
-    print "Header: " 
+    header, data = separate_header(data)    
+    print "Column Headers: " 
     pprint.pprint(header)
+    
 
-
+    ### Get the subset we want
     ### Subset by division, subdivision, etc. 
-    divisions = get_divisions(data, header)
-    subdivisions = get_subdivisions(data, header)
+    num_per_div = to_kvps_div_count(data, header)
+    num_per_subdiv = to_kvps_subdiv_count(data, header)
+    complete_rows = exclude_incomplete_rows(data)
+
+    #print "Number of data points per division: "
+    #pprint.pprint(num_per_div.items())
+    #print "Number of data points per subdivision: "
+    #pprint.pprint(num_per_subdiv.items())
+
+    ### Analysis of columns:
+    ### How many missing values per column?
+    ### How many unique values per column? 
+    ### Plot a histogram on values in this column? 
+    ### Descriptive statistics of values in this column? 
+    col_num_missing = to_kvps_col_num_missing(data, header)
+    col_num_unique = to_kvps_col_num_unique(data, header)
+    col_metadata = col_num_unique.join(col_num_missing)
+
+    #print "Column metadata: number of unique values, percentage of values missing"
+    #pprint.pprint(col_metadata.collect())
+
+    print "Defect Type Histogram: Whole Dataset"
+    plot_defect_histogram(data, data_file, header)
+   
+    print "Defect Type Histogram: Complete rows only"
+    plot_defect_histogram(complete_rows, data_file, header)
+
+
+    print "Get the subset of the data for the (u'APPALACHIAN', u'BIG SANDY') subdivision"
+    subdiv_key = (u'APPALACHIAN', u'BIG SANDY')
+    subdiv_data = to_subdiv(data, header, subdiv_key[0], subdiv_key[1])
+    print subdiv_data.count()
+   
+    print "Defect Type Histogram: APPALACHIAN - BIG SANDY subdivision only"
+    plot_defect_histogram(subdiv_data, data_file, header)
+
+
+    exit()
+    
+    ### Run classifier on subdivision-specific track-geometry defect data
+    ### Use following features, treat all as categorical.
+    ### 1. "CURVE"
+    ### 2. "EVENT"
+    ### 3. "FREIGHT_MPH_Q" 
+    ### 4. "TRACK"
+    feature_cols = ["CURVE",
+                    "EVENT",
+                    "FRIEGHT_MPH_Q",  ### Mis-spelling deliberate, it's spelled that way in the data
+                    "TRACK"]
+    labeled_points, catinfo = to_labeled_points(subdiv_data, data_file, header, feature_cols)
+    #print catinfo
+    #print labeled_points.collect()[:5]
+    (training, testing) = labeled_points.randomSplit([0.7,0.3])
+    num_classes = to_col(subdiv_data, header.index("EXCEPTION TYPE")).distinct().count()
+    #print num_classes
+    model = DecisionTree.trainClassifier(training, 
+                                         numClasses=num_classes, 
+                                         categoricalFeaturesInfo=catinfo,
+                                         impurity="gini", 
+                                         maxDepth=5, 
+                                         maxBins=32)
+    predictions = model.predict(testing.map(lambda x: x.features))
+    labels_and_predictions = testing.map(lambda x: x.label).zip(predictions)
+    test_error = labels_and_predictions.filter(lambda (v,p): v!=p).count() / float(testing.count())
+    print "Test error: " + str(test_error)
+    
+    
+
+
+
+
+
 
     ##### Load the latitude-longitude track geometry
     ##### defect data. Produce a plot of the locations
