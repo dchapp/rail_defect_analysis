@@ -1,0 +1,102 @@
+
+\documentclass{sig-alternate-05-2015}
+
+
+\begin{document}
+
+% Copyright
+\setcopyright{acmcopyright}
+
+% DOI
+\doi{}
+
+% ISBN
+\isbn{}
+
+%Conference
+\conferenceinfo{}{}
+
+\acmPrice{}
+
+%
+% --- Author Metadata here ---
+\conferenceinfo{}{}
+%\CopyrightYear{2007} % Allows default copyright year (20XX) to be over-ridden - IF NEED BE.
+%\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE.
+% --- End of Author Metadata ---
+
+\title{Leveraging Spark and Docker for Scalable, Reproducible Analysis of Railroad Defects}
+
+\numberofauthors{2}
+\author{
+% 1st. author
+\alignauthor
+Dylan Chapp\\
+       \affaddr{University of Delaware}\\
+       \email{dchapp@udel.edu}
+% 2nd. author
+\alignauthor
+Surya Kasturi\\
+       \affaddr{University of Delaware}\\
+       \email{suryak@udel.edu}
+}
+
+\maketitle
+\begin{abstract}
+\end{abstract}
+
+\keywords{}
+
+\section{Introduction}
+We present a scalable analysis platform for railway defect data and a proof of concept 
+using two railroad defect data sets. 
+
+Railway defects present a major threat to railway network 
+integrity, which in turn has serious economic consequences.~\cite{Schafer:08}
+In light of the significance of railway defects, there is consensus in the railroad engineering 
+community that big data analytics platforms can contribute to prediction of 
+defects.~\cite{Zarembski:14} 
+
+
+\section{Methodology}
+
+\subsection{Data}
+The data that we test our platform against is partitioned into two distinct sets, one containing
+only records of rail defects and the other containing only records of track geometry defects. 
+For our purposes, rail defects refer to physical degradation of the rails themselves, e.g., cracks,
+whereas track geometry defects refer to instances where track components have moved out of their 
+correct positions.~\cite{RailroadSafety:15}
+
+\section{Evaluation}
+
+\section{Continuing Work}
+We identified the potential of acheiving better classification accuracy by training 
+classifiers on subsets of data from regions that have similar distributions of defects.
+We propose adding a preprocessing stage to our platform that partitions the data by 
+subdivision, computes the distribution of defects for each subdivision, and then groups
+subdivisions based on a similarity metric for distributions. 
+
+Currently we use a simple similarity metric--the Chi-squared distance--and group subdivision
+based on a fixed similarity threshold. We plan to refine our similarity metric, use it
+to explore the efficacy of clustering techniques for grouping subdivisions, and evaluate the
+usefulness of the grouping by training and testing defect type classifiers on each such group. 
+
+\section{Conclusions}
+\section{Acknowledgments}
+
+%
+% The following two commands are all you need in the
+% initial runs of your .tex file to
+% produce the bibliography for the citations in your paper.
+\bibliographystyle{abbrv}
+\bibliography{bib}  % sigproc.bib is the name of the Bibliography in this case
+% You must have a proper ".bib" file
+%  and remember to run:
+% latex bibtex latex latex
+% to resolve all references
+%
+% ACM needs 'a single self-contained file'!
+%
+%APPENDICES are optional
+%\balancecolumns
+\end{document}
