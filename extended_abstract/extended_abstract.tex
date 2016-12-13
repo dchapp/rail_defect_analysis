@@ -43,6 +43,13 @@ Surya Kasturi\\
 
 \maketitle
 \begin{abstract}
+The resiliency of railroad networks depends on the ability of railroad 
+engineers to identify and mitigate track and rail defects. As railroads
+modernize their defect identification measures, the volume and velocity of 
+defect data substantially increases, necessitating adoption of techniques
+for ``Big Data" analytics. We present a study of railroad defect prediction 
+built atop Apache Spark and Docker--increasingly common substrates for 
+predictive analytics on large data sets. 
 \end{abstract}
 %\keywords{}
 
@@ -67,7 +74,10 @@ The data sets under consideration present familiar, but nevertheless nontrivial 
 \texttt{rail\_defects} data set consists of 26,432 20-dimensional points, and the 
 \texttt{track\_geometry\_defects} data set consists of 25,421 41-dimensional points. 
 Both data sets contain mixed numerical and categorical data, and each data set's points are
-each labeled with a class label indicating the kind of defect the point refers to.
+each labeled with a class label indicating the kind of defect the point refers to. 
+Due to the variety of data types and due to missing data, careful preprocessing is necessary
+prior to any analysis. In this section we descibe our preprocessing stages, and justify our
+selection of analyses. 
 
 In light of the properties of the \texttt{rail\_defects} and 
 \texttt{track\_geometry\_defects} data sets, we initially focus on obtaining accurate 
@@ -75,24 +85,23 @@ predictions from multilabel classification models. We argue that studying the ac
 standard multilabel classifiers against our static data sets is a crucial first step towards
 models that can predict likely defects for a particular section of railroad. 
 
+\section{Platform}
 With a view towards coping with larger data sets than those currently under consideration, we
 implement our analysis plaform using the MapReduce framework Apache Spark. Spark provides 
 improved performance for the data transformation tasks we perform during preprocessing relative
 to other MapReduce frameworks~\cite{Zaharia:2012}, and offers convenient Python bindings. Moreover, Spark comes 
 packaged with a full-fledged paralllel machine learning library--MLLib--whose classifier 
 implementations we use.
-
 In order to guarantee portability and reproducibiliy of our analyses, we package our code,
 data, and environment as a Docker container. In addition to aiding our own development effort
 by enabling rapid, safe iteration on our design, containerization allows collaborators who are
 unfamiliar with Spark or MLLib to run our code without doing any configuration of their 
 environment beyond setting up Docker. 
 
-
-
 We present a block diagram of our platform's high-level design in Figure~\ref{fig_block_diagram}
 \begin{figure}[ht!]
-\includegraphics[width=0.45\textwidth]{block_diagram.pdf}
+\includegraphics[width=0.50\textwidth]{block_diagram.pdf}
+\caption{Block Diagram of Analytics Platform}
 \label{fig_block_diagram}
 \end{figure}
 
