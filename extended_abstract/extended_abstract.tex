@@ -8,19 +8,19 @@
 \setcopyright{acmcopyright}
 
 % DOI
-\doi{}
+%\doi{}
 
 % ISBN
-\isbn{}
+%\isbn{}
 
 %Conference
-\conferenceinfo{}{}
+%\conferenceinfo{}{}
 
-\acmPrice{}
+%\acmPrice{}
 
 %
 % --- Author Metadata here ---
-\conferenceinfo{}{}
+%\conferenceinfo{}{}
 %\CopyrightYear{2007} % Allows default copyright year (20XX) to be over-ridden - IF NEED BE.
 %\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE.
 % --- End of Author Metadata ---
@@ -71,15 +71,15 @@ initial results on classification accuracy, and propose extensions to our work.
 
 \section{Methodology}
 The data sets under consideration present familiar, but nevertheless nontrivial challenges. The 
-\texttt{rail\_defects} data set consists of 26,432 20-dimensional points, and the 
-\texttt{track\_geometry\_defects} data set consists of 25,421 41-dimensional points. 
+\texttt{rail\_defects} data set consists of 26,432 20-dimensional points, and the \\
+\texttt{track\_geometry\_defects} data set consists of 25,421 \\ 41-dimensional points. 
 Both data sets contain mixed numerical and categorical data, and each data set's points are
 each labeled with a class label indicating the kind of defect the point refers to. 
 Due to the variety of data types and due to missing data, careful preprocessing is necessary
 prior to any analysis. In this section we descibe our preprocessing stages, and justify our
 selection of analyses. 
 
-In light of the properties of the \texttt{rail\_defects} and 
+In light of the properties of the \texttt{rail\_defects} and \\
 \texttt{track\_geometry\_defects} data sets, we initially focus on obtaining accurate 
 predictions from multilabel classification models. We argue that studying the accuracy of
 standard multilabel classifiers against our static data sets is a crucial first step towards
@@ -93,10 +93,11 @@ to other MapReduce frameworks~\cite{Zaharia:2012}, and offers convenient Python 
 packaged with a full-fledged paralllel machine learning library--MLLib--whose classifier 
 implementations we use.
 In order to guarantee portability and reproducibiliy of our analyses, we package our code,
-data, and environment as a Docker container. In addition to aiding our own development effort
-by enabling rapid, safe iteration on our design, containerization allows collaborators who are
-unfamiliar with Spark or MLLib to run our code without doing any configuration of their 
-environment beyond setting up Docker. 
+data, and environment as a Docker container. 
+%In addition to aiding our own development effort
+%by enabling rapid, safe iteration on our design, containerization allows collaborators who are
+%unfamiliar with Spark or MLLib to run our code without doing any configuration of their 
+%environment beyond setting up Docker. 
 
 We present a block diagram of our platform's high-level design in Figure~\ref{fig_block_diagram}
 \begin{figure}[ht!]
@@ -106,8 +107,11 @@ We present a block diagram of our platform's high-level design in Figure~\ref{fi
 \end{figure}
 
 \section{Evaluation}
+To evaluate our classifier's performance, we examine the overall accuracy rate of the classifier
+and its associated confusion matrix. When we train the classifier on training data drawn 
+uniformly at random from the 
 
-\section{Continuing Work}
+\section{Conclusions and Continuing Work}
 We identified the potential of acheiving better classification accuracy by training 
 classifiers on subsets of data from regions that have similar distributions of defects.
 We propose adding a preprocessing stage to our platform that partitions the data by 
@@ -123,24 +127,8 @@ Similarity metric:
 $S(D_1,D_2) = \sum\limits_{i=0}^{N}\frac{(x_i - y_i)^2}{sdfdsfdsf}$
 
 
-\section{Conclusions}
-\section{Acknowledgments}
-
-%
-% The following two commands are all you need in the
-% initial runs of your .tex file to
-% produce the bibliography for the citations in your paper.
 \bibliographystyle{abbrv}
-\bibliography{bib}  % sigproc.bib is the name of the Bibliography in this case
-% You must have a proper ".bib" file
-%  and remember to run:
-% latex bibtex latex latex
-% to resolve all references
-%
-% ACM needs 'a single self-contained file'!
-%
-%APPENDICES are optional
-%\balancecolumns
+\bibliography{bib}  
 \end{document}
 
 
