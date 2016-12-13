@@ -1,0 +1,239 @@
+% This is "sig-alternate.tex" V2.1 April 2013
+% This file should be compiled with V2.5 of "sig-alternate.cls" May 2012
+%
+% This example file demonstrates the use of the 'sig-alternate.cls'
+% V2.5 LaTeX2e document class file. It is for those submitting
+% articles to ACM Conference Proceedings WHO DO NOT WISH TO
+% STRICTLY ADHERE TO THE SIGS (PUBS-BOARD-ENDORSED) STYLE.
+% The 'sig-alternate.cls' file will produce a similar-looking,
+% albeit, 'tighter' paper resulting in, invariably, fewer pages.
+%
+% ----------------------------------------------------------------------------------------------------------------
+% This .tex file (and associated .cls V2.5) produces:
+%       1) The Permission Statement
+%       2) The Conference (location) Info information
+%       3) The Copyright Line with ACM data
+%       4) NO page numbers
+%
+% as against the acm_proc_article-sp.cls file which
+% DOES NOT produce 1) thru' 3) above.
+%
+% Using 'sig-alternate.cls' you have control, however, from within
+% the source .tex file, over both the CopyrightYear
+% (defaulted to 200X) and the ACM Copyright Data
+% (defaulted to X-XXXXX-XX-X/XX/XX).
+% e.g.
+% \CopyrightYear{2007} will cause 2007 to appear in the copyright line.
+% \crdata{0-12345-67-8/90/12} will cause 0-12345-67-8/90/12 to appear in the copyright line.
+%
+% ---------------------------------------------------------------------------------------------------------------
+% This .tex source is an example which *does* use
+% the .bib file (from which the .bbl file % is produced).
+% REMEMBER HOWEVER: After having produced the .bbl file,
+% and prior to final submission, you *NEED* to 'insert'
+% your .bbl file into your source .tex file so as to provide
+% ONE 'self-contained' source file.
+%
+% ================= IF YOU HAVE QUESTIONS =======================
+% Questions regarding the SIGS styles, SIGS policies and
+% procedures, Conferences etc. should be sent to
+% Adrienne Griscti (griscti@acm.org)
+%
+% Technical questions _only_ to
+% Gerald Murray (murray@hq.acm.org)
+% ===============================================================
+%
+% For tracking purposes - this is V2.0 - May 2012
+
+\documentclass{sig-alternate-05-2015}
+
+
+\begin{document}
+
+% Copyright
+\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\setcopyright{usgov}
+%\setcopyright{usgovmixed}
+%\setcopyright{cagov}
+%\setcopyright{cagovmixed}
+
+
+% DOI
+\doi{10.475/123_4}
+
+% ISBN
+\isbn{123-4567-24-567/08/06}
+
+%Conference
+\conferenceinfo{PLDI '13}{June 16--19, 2013, Seattle, WA, USA}
+
+\acmPrice{\$15.00}
+
+%
+% --- Author Metadata here ---
+\conferenceinfo{WOODSTOCK}{'97 El Paso, Texas USA}
+%\CopyrightYear{2007} % Allows default copyright year (20XX) to be over-ridden - IF NEED BE.
+%\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE.
+% --- End of Author Metadata ---
+
+\title{Leveraging Spark and Docker for Scalable, Reproducible Analysis of Railroad Defects}
+
+%
+% You need the command \numberofauthors to handle the 'placement
+% and alignment' of the authors beneath the title.
+%
+% For aesthetic reasons, we recommend 'three authors at a time'
+% i.e. three 'name/affiliation blocks' be placed beneath the title.
+%
+% NOTE: You are NOT restricted in how many 'rows' of
+% "name/affiliations" may appear. We just ask that you restrict
+% the number of 'columns' to three.
+%
+% Because of the available 'opening page real-estate'
+% we ask you to refrain from putting more than six authors
+% (two rows with three columns) beneath the article title.
+% More than six makes the first-page appear very cluttered indeed.
+%
+% Use the \alignauthor commands to handle the names
+% and affiliations for an 'aesthetic maximum' of six authors.
+% Add names, affiliations, addresses for
+% the seventh etc. author(s) as the argument for the
+% \additionalauthors command.
+% These 'additional authors' will be output/set for you
+% without further effort on your part as the last section in
+% the body of your article BEFORE References or any Appendices.
+
+\numberofauthors{8} %  in this sample file, there are a *total*
+% of EIGHT authors. SIX appear on the 'first-page' (for formatting
+% reasons) and the remaining two appear in the \additionalauthors section.
+%
+\author{
+% You can go ahead and credit any number of authors here,
+% e.g. one 'row of three' or two rows (consisting of one row of three
+% and a second row of one, two or three).
+%
+% The command \alignauthor (no curly braces needed) should
+% precede each author name, affiliation/snail-mail address and
+% e-mail address. Additionally, tag each line of
+% affiliation/address with \affaddr, and tag the
+% e-mail address with \email.
+%
+% 1st. author
+\alignauthor
+Dylan Chapp\\
+       \affaddr{University of Delaware}\\
+       \email{dchapp@udel.edu}
+% 2nd. author
+\alignauthor
+Surya Kasturi \\
+       \affaddr{University of Delaware}\\
+       \email{suryak@udel.edu}
+}
+
+\maketitle
+\begin{abstract}
+
+\end{abstract}
+
+
+%
+% The code below should be generated by the tool at
+% http://dl.acm.org/ccs.cfm
+% Please copy and paste the code instead of the example below. 
+%
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+    <concept_id>10002950.10003648.10003688.10003699</concept_id>
+    <concept_desc>Mathematics of computing~Exploratory data analysis</concept_desc>
+    <concept_significance>500</concept_significance>
+</concept>
+<concept>
+    <concept_id>10010147.10010257.10010321</concept_id>
+    <concept_desc>Computing methodologies~Machine learning algorithms</concept_desc>
+    <concept_significance>500</concept_significance>
+</concept>
+</ccs2012> 
+\end{CCSXML}
+
+\ccsdesc[500]{Mathematics of computing~Exploratory data analysis}
+\ccsdesc[500]{Computing methodologies~Machine learning algorithms}
+
+\printccsdesc
+
+\keywords{Classification; clustering}
+
+\section{Introduction}
+According to the United States Federal Railroad Administration Office of Safety Analysis, track defects are the second leading cause of accidents on railways in the United States. The leading cause of railway accidents is attributed to human error. Track maintenance is one of the primary factors that affect the service life of a rail track.\\
+
+In this project, we model an analytics system that leverages captured sensor data of railway tracks to predict the likelihood of a track or section having a defect. This model we believe will improve track maintenance program by mitigating the errors caused by humans to identify a defect.
+
+\section {Data}
+This study uses railroad defects tracked during 2010--2012 of size 25,443 records and Track Geometry defects tracked during 2008--2012 of size 25,442 records to model the system. This data is in tabular format and contains information about defect type, rail section weight, age, accumulated tonnage, track type, location coordinates, joint or weld etc.
+
+\section{Methodology}
+
+\subsection{Preprocessing}
+There are only ~2,000 records with no empty values in Rail Defects data. Column that determines whether a section is joint or weld alone contributes maximum empty value records. It is not yet known whether an empty value in this column signifies it is not a joint/weld or data unavailability. Hence, the joint-weld column is not used to model this system. Around ~600 records are present with empty values while ignoring the joint-weld column. \\
+
+In the pre-processing step, records with at least one empty value ignoring the joint-weld column are filtered out. Records with extreme values in other columns such as age, size are also excluded as outliers.\\
+
+\subsection{Meaningful subsets}
+The Rail Defects data contains defects from several divisions and sub-divisions that are geographically apart. It also contain ~20 defect types whose physical relationships with other parameters might be potentially different. So, identifying subsets of data that have common properties is an important task. \\
+
+\textbf{Group by Division}: There are 11 divisions in Rail Defects dataset, while the Track Geometry dataset has only 1 division. For each division in the dataset, a subset is created for the classifier to train and test. \\ 
+
+\textbf{Group by Sub-Division}: In each division there are approximately 10-20 sub-divisions. We created a subset for each sub-division under a division. Since some of the divisions in the data do not have enough data, we restricted ourselves to evaluate sub-divisions only under a few divisions. \\
+
+\textbf{Group by Defects}: Defect types in the dataset are grouped into super-classes (categories) that we assume may have common physical properties. Data is then grouped into subsets based on super classes. Table 1. shows the defect type super classes \\
+
+\begin{table}
+\centering
+\caption{Defect Groups}
+\begin{tabular}{|c|c|l|} \hline
+\# & Super Class & Defect Types\\ \hline
+1 & T & TDD, TDC, TD, TDT\\ \hline
+2 & B & BRO, BHB, BB\\ \hline
+3 & W & HW, HWJ, OAW, SW\\ \hline
+4 & Ungrouped & SD, VSH, HSH, TW,\\
+  & & CH, FH, PIPE, DR, EFBW\\
+\hline\end{tabular}
+\end{table}
+
+\subsection{Classifier Evaluation}
+Decision Tree classifier has been chosen to model the system to predict defect types. The subsets are randomly split into 70-30 ratio for training and testing. \\
+
+\subsubsection{Preliminary Results}
+The classifier is evaluated on the subsets grouped by division resulted in a best mean accuracy of ~50\%, while the subsets grouped by sub-divisions in AP division resulted in a best mean accuracy of ~55\%. 
+
+\subsubsection{Classification Pipeline}
+We propose a hierarchical classification scheme to improve the mean prediction accuracy of the classifier. This pipeline has two levels. First defect's super class is identified followed by defect type using a second classifier.\\
+
+Defects are grouped into super classes (categories) manually based on their estimated physical properties using the Track Inspector Rail Defect Reference Manual. Three super classes have been formed out of ~20 defects. There are still several defects that don't belong to a particular category. These are left out as they are not found in reference manual or we found no cues yet to group them. These uncategorized defects are excluded while evaluating the pipeline.\\
+
+The mean accuracy of the classifier to predict a super class is found to be 92.6\% on subset of super classes (T, B, W) and the mean accuracy of the classifier to predict a defect in a super class is found to be 89.90\%.
+
+\section{Conclusions}
+* Our dataset contain ~20 defect types
+
+* Each defect *might* have different relationship with the features
+
+* A group of defects might show a common relationship with features
+
+* Each defect might have different physical properties 
+
+* Grouping dataset into sub-groups based these above mentioned 
+relationships has produced better results
+
+* We intend to explore more in this direction
+
+\section{Acknowledgments}
+
+
+\bibliographystyle{abbrv}
+\bibliography{sigproc}
+
+\end{document}

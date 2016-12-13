@@ -44,28 +44,57 @@ Surya Kasturi\\
 \maketitle
 \begin{abstract}
 \end{abstract}
-
-\keywords{}
+%\keywords{}
 
 \section{Introduction}
-We present a scalable analysis platform for railway defect data and a proof of concept 
-using two railroad defect data sets. 
+According to the United States Federal Railroad Administration Office of Safety Analysis, track defects are the second leading cause of accidents on railways in the United States.
+In light of the economic significance of railway accidents~\cite{Schafer:08}, there is a pressing need in the railroad engineering community to adopt data-driven scalable data analysis tools from the greater ``Big Data" ecosystem.~\cite{Zarembski:14} 
+Track maintenance--i.e., identifying and repairing defects--is one of the primary factors that affect the service life of a rail track, but due to the severe safety implications of undeftected or unrepaired defects, the ability to predict common defects is highly desirable. 
 
-Railway defects present a major threat to railway network 
-integrity, which in turn has serious economic consequences.~\cite{Schafer:08}
-In light of the significance of railway defects, there is consensus in the railroad engineering 
-community that big data analytics platforms can contribute to prediction of 
-defects.~\cite{Zarembski:14} 
-
+In this work, we present a case study centered on the analysis of two railroad defect data sets
+obtained from railroad engineering researchers in the University of Delaware Department of 
+Civil Engineering. Hereafter we will refer to these datasets as the \texttt{rail\_defects} data 
+set and the \texttt{track\_geometry\_defects} data set. Respectively, these data sets describe 
+defects in the rails themselves, such as voids or internal changes in crystalline structure, 
+and misalignment of track components, such as one rail tilting away from the other. We 
+investigate the feasibility of predicting the type of a defect based on associated data such 
+as geographic region, mean gross tonnage (MGT) the track is subject to, and rail type. 
+In the rest of this paper, we outline the construction of our analysis platform, present some
+initial results on classification accuracy, and propose extensions to our work. 
 
 \section{Methodology}
+The data sets under consideration present familiar, but nevertheless nontrivial challenges. The 
+\texttt{rail\_defects} data set consists of 26,432 20-dimensional points, and the 
+\texttt{track\_geometry\_defects} data set consists of 25,421 41-dimensional points. 
+Both data sets contain mixed numerical and categorical data, and each data set's points are
+each labeled with a class label indicating the kind of defect the point refers to.
 
-\subsection{Data}
-The data that we test our platform against is partitioned into two distinct sets, one containing
-only records of rail defects and the other containing only records of track geometry defects. 
-For our purposes, rail defects refer to physical degradation of the rails themselves, e.g., cracks,
-whereas track geometry defects refer to instances where track components have moved out of their 
-correct positions.~\cite{RailroadSafety:15}
+In light of the properties of the \texttt{rail\_defects} and 
+\texttt{track\_geometry\_defects} data sets, we initially focus on obtaining accurate 
+predictions from multilabel classification models. We argue that studying the accuracy of
+standard multilabel classifiers against our static data sets is a crucial first step towards
+models that can predict likely defects for a particular section of railroad. 
+
+With a view towards coping with larger data sets than those currently under consideration, we
+implement our analysis plaform using the MapReduce framework Apache Spark. Spark provides 
+improved performance for the data transformation tasks we perform during preprocessing relative
+to other MapReduce frameworks~\cite{Zaharia:2012}, and offers convenient Python bindings. Moreover, Spark comes 
+packaged with a full-fledged paralllel machine learning library--MLLib--whose classifier 
+implementations we use.
+
+In order to guarantee portability and reproducibiliy of our analyses, we package our code,
+data, and environment as a Docker container. In addition to aiding our own development effort
+by enabling rapid, safe iteration on our design, containerization allows collaborators who are
+unfamiliar with Spark or MLLib to run our code without doing any configuration of their 
+environment beyond setting up Docker. 
+
+
+
+We present a block diagram of our platform's high-level design in Figure~\ref{fig_block_diagram}
+\begin{figure}[ht!]
+\includegraphics[width=0.45\textwidth]{block_diagram.pdf}
+\label{fig_block_diagram}
+\end{figure}
 
 \section{Evaluation}
 
@@ -80,6 +109,10 @@ Currently we use a simple similarity metric--the Chi-squared distance--and group
 based on a fixed similarity threshold. We plan to refine our similarity metric, use it
 to explore the efficacy of clustering techniques for grouping subdivisions, and evaluate the
 usefulness of the grouping by training and testing defect type classifiers on each such group. 
+
+Similarity metric:
+$S(D_1,D_2) = \sum\limits_{i=0}^{N}\frac{(x_i - y_i)^2}{sdfdsfdsf}$
+
 
 \section{Conclusions}
 \section{Acknowledgments}
@@ -100,3 +133,18 @@ usefulness of the grouping by training and testing defect type classifiers on ea
 %APPENDICES are optional
 %\balancecolumns
 \end{document}
+
+
+%However, we do not pursue any kind of unsupervised learning such as clustering. Our 
+%judgement is that due to the mixed data types present in each feature vector, defining a 
+%meaningful similarity metric bewteen two such feature vectors would be impossible without
+%deep domain knowledge. 
+
+%We present a scalable analysis platform for railway defect data and a proof of concept 
+%using two railroad defect data sets. 
+%
+%Railway defects present a major threat to railway network 
+%integrity, which in turn has serious economic consequences.~\cite{Schafer:08}
+%In light of the significance of railway defects, there is consensus in the railroad engineering 
+%community that analytics platforms are needed that can cope with the increasing scale of railway data
+%and deliver predictive capability.~\cite{Zarembski:14} 

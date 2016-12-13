@@ -1,14 +1,19 @@
 \begin{thebibliography}{1}
 
-\bibitem{RailroadSafety:15}
-O.~of~Railroad~Safety.
-\newblock {\em Track Inspector Rail Defect Reference Manual}, 2015.
-
 \bibitem{Schafer:08}
 D.~H. Schafer.
 \newblock A prediction model for broken rails and an analysis of their economic
   impact.
 \newblock {\em 2008 AREMA Conference}, 2008.
+
+\bibitem{Zaharia:2012}
+M.~Zaharia, M.~Chowdhury, T.~Das, A.~Dave, J.~Ma, M.~McCauley, M.~J. Franklin,
+  S.~Shenker, and I.~Stoica.
+\newblock Resilient distributed datasets: A fault-tolerant abstraction for
+  in-memory cluster computing.
+\newblock In {\em Proceedings of the 9th USENIX Conference on Networked Systems
+  Design and Implementation}, NSDI'12, pages 2--2, Berkeley, CA, USA, 2012.
+  USENIX Association.
 
 \bibitem{Zarembski:14}
 A.~M. Zarembski.
