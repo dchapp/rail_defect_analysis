@@ -55,7 +55,7 @@ built atop Apache Spark and Docker to achieve scalability and reproducibility.
 \section{Introduction}
 According to the United States Federal Railroad Administration Office of Safety Analysis, track defects are the second leading cause of accidents on railways in the United States.
 In light of the economic significance of railway accidents~\cite{Schafer:08}, there is a pressing need in the railroad engineering community to adopt data-driven scalable data analysis tools from the greater ``Big Data" ecosystem.~\cite{Zarembski:14} 
-Track maintenance--i.e., identifying and repairing defects--is one of the primary factors that affect the service life of a rail track, but due to the severe safety implications of undeftected or unrepaired defects, the ability to predict common defects is highly desirable. 
+Track maintenance--i.e., identifying and repairing defects--is one of the primary factors that affect the service life of a rail track, but due to the severe safety implications of undetected or unprepaired defects, the ability to predict common defects is highly desirable. 
 
 In this work, we present a case study centered on the analysis of two railroad defect data sets
 obtained from railroad engineering researchers in the University of Delaware Department of 
@@ -97,7 +97,7 @@ the usefulness of these additional preprocessing stages.
 
 To build and evaluate our classifier, we split the subset of data remaining after preprocessing into
 training and testing sets consisting of, respectively, $70\%$ and $30\%$ of the original data. 
-Membership in the training and testing sets is determined by uniform random samplying. We then 
+Membership in the training and testing sets is determined by uniform random sampling. We then 
 train an instance of MLLib's decision tree classifier on the training set and test its predictions.
 In principle, any other MLLib classifier with a compatible API could be trained instead, but we 
 elected to keep our classifier type fixed and investigate the effect of the ``class-merging" and 
@@ -106,11 +106,35 @@ elected to keep our classifier type fixed and investigate the effect of the ``cl
 
 
 \section{Evaluation}
+
 To evaluate our classifier's performance, we examine the overall accuracy rate of the classifier
-and its associated confusion matrix. When we train the classifier on training data drawn 
-uniformly at random from the 
+and its associated confusion matrix. When we trained the classifier on training data drawn uniformly at random from \texttt{rail\_defects} dataset with each defect type as a class label, the classifier predicted with an accuracy of $42.55\%$. 
 
 \subsection{Class Label Merging}
+We propose mapping each data point's class label to a ``super-class" label indicating its general kind. Out of 20 defect types in \texttt{rail\_defects} dataset, 11 are mapped to 3 three ``super-classes". Table~\ref{defect_groups} shows mapped and unmapped defect types.
+
+\begin{table}
+\label{defect_groups}
+\centering
+\caption{Rail Defects Mapping}
+\begin{tabular}{|c|l|} \hline
+Super Class & Defect Types\\ \hline
+T & TDD, TDC, TD, TDT\\ \hline
+B & BRO, BHB, BB\\ \hline
+W & HW, HWJ, OAW, SW\\ \hline
+Others & SD, VSH, HSH, TW,\\
+  & CH, FH, PIPE, DR, EFBW\\
+\hline\end{tabular}
+\end{table}
+
+With this mapping, we show that the prediction accuracy of rail defects is improved using a hierarchical classification scheme . First a classifier is trained to decide super-class of data point, then a second classifier is used to predict its defect type. When this model applied on the training data, the classifier predicted with an accuracy of $89.90\%$. Figure~2 shows the confusion matrix of the respective result.
+
+\begin{figure}[ht!]
+\includegraphics[width=0.4\textwidth]{confusion_matrix_1.png}
+\label{confusion_matrix_2}
+\caption{Confusion Matrix of the hierarchical classification scheme}
+\end{figure}
+
 
 \subsection{Geographic Filtering}
 We propose that if subdivisions have similar numbers of each kind of defect, then we should
